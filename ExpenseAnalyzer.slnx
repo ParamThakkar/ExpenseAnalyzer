@@ -3,4 +3,8 @@
     <Project Path="src/ExpenseAnalyzer.Domain/ExpenseAnalyzer.Domain.csproj" />
     <Project Path="src/ExpenseAnalyzer.Import/ExpenseAnalyzer.Import.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ExpenseAnalyzer.Tests.UnitTests/ExpenseAnalyzer.Tests.UnitTests.csproj" />
+    <Project Path="tests/ExpenseAnalyzer.Tests.IntegrationTests/ExpenseAnalyzer.Tests.IntegrationTests.csproj" />
+  </Folder>
 </Solution>
