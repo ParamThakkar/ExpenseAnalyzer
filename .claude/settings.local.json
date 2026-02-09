@@ -20,7 +20,12 @@
       "Bash(gh pr create:*)",
       "Bash(echo:*)",
       "Bash(git remote get-url:*)",
-      "Bash(gh:*)"
+      "Bash(gh:*)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
+      "Bash(git branch:*)",
+      "Bash(git restore:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

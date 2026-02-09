@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Concise project guidance for Claude Code. Specialized instructions: `.claude/agents/feature-builder.md` (dev), `.claude/agents/test-generator.md` (testing).
+Concise project guidance for Claude Code. Specialized agents: `.claude/agents/feature-architect.md` (feature implementation), `.claude/agents/test-generator.md` (test generation).
 
 ## Project Overview
 
@@ -117,4 +117,4 @@ public static class AccountEndpoints
 
 ## Adding New Entities
 
-See `.claude/agents/feature-builder.md` for complete end-to-end entity implementation guide with 8-step checklist and code templates.
+See `.claude/agents/feature-architect.md` for complete end-to-end entity implementation with .NET 10 best practices, SOLID principles, and the 8-step checklist. The feature-architect agent handles all layers (Domain → Infra → API) with production-quality code.
