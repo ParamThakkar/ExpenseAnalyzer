@@ -28,5 +28,6 @@ public static class InfraRegistrar
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IIncomeRepository, IncomeRepository>();
+        services.AddScoped<ITransferRepository, TransferRepository>();
     }
 }

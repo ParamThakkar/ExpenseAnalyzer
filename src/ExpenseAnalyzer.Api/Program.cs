@@ -119,6 +119,7 @@ app.MapGet("/api/v{version:apiVersion}/weatherforecast", () =>
 
 app.MapAccountEndpoints(apiVersionSet);
 app.MapIncomeEndpoints(apiVersionSet);
+app.MapTransferEndpoints(apiVersionSet);
 
 app.Run();
 
