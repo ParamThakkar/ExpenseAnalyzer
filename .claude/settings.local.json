@@ -14,7 +14,13 @@
       "Bash(timeout:*)",
       "Bash(curl:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)",
+      "Bash(echo:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(gh:*)"
     ]
   }
 }
