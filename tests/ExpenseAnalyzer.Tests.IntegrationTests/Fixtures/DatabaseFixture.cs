@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using ExpenseAnalyzer.Domain;
 
 namespace ExpenseAnalyzer.Tests.IntegrationTests.Fixtures;
@@ -15,6 +16,7 @@ public class DatabaseFixture : IAsyncLifetime
     public Guid TestAccountId { get; private set; }
     public Guid SecondCategoryId { get; private set; }
     public Guid SecondAccountId { get; private set; }
+    public Guid ThirdAccountId { get; private set; }
 
     public async Task InitializeAsync()
     {
@@ -46,9 +48,11 @@ public class DatabaseFixture : IAsyncLifetime
         // Create test accounts
         var account1 = new Account { Id = Guid.NewGuid(), Name = "TestAccount1" };
         var account2 = new Account { Id = Guid.NewGuid(), Name = "TestAccount2" };
-        Context.Account.AddRange(account1, account2);
+        var account3 = new Account { Id = Guid.NewGuid(), Name = "TestAccount3" };
+        Context.Account.AddRange(account1, account2, account3);
         TestAccountId = account1.Id;
         SecondAccountId = account2.Id;
+        ThirdAccountId = account3.Id;
 
         await Context.SaveChangesAsync();
     }

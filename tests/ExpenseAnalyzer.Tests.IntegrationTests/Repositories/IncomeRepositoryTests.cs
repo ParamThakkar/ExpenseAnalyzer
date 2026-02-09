@@ -26,7 +26,7 @@ public class IncomeRepositoryTests
         var income1 = new Income
         {
             Id = Guid.NewGuid(),
-            AccountId = _fixture.TestAccountId,
+            AccountId = _fixture.ThirdAccountId,
             CategoryId = _fixture.TestCategoryId,
             Amount = 1000m,
             Timestamp = DateTime.Now
@@ -34,7 +34,7 @@ public class IncomeRepositoryTests
         var income2 = new Income
         {
             Id = Guid.NewGuid(),
-            AccountId = _fixture.TestAccountId,
+            AccountId = _fixture.ThirdAccountId,
             CategoryId = _fixture.TestCategoryId,
             Amount = 2000m,
             Timestamp = DateTime.Now.AddDays(-1)
@@ -53,11 +53,11 @@ public class IncomeRepositoryTests
         await _repository.SaveChangesAsync();
 
         // Act
-        var result = (await _repository.GetByAccountAsync(_fixture.TestAccountId)).ToList();
+        var result = (await _repository.GetByAccountAsync(_fixture.ThirdAccountId)).ToList();
 
         // Assert
         Assert.Equal(2, result.Count);
-        Assert.All(result, i => Assert.Equal(_fixture.TestAccountId, i.AccountId));
+        Assert.All(result, i => Assert.Equal(_fixture.ThirdAccountId, i.AccountId));
         // Verify ordering by timestamp descending
         Assert.True(result[0].Timestamp >= result[1].Timestamp);
     }
@@ -79,12 +79,20 @@ public class IncomeRepositoryTests
     [Fact]
     public async Task GetByCategoryAsync_WithIncome_ReturnsIncomeForCategory()
     {
+        var category = new Category
+        {
+            Name = "GetByCategoryAsync_WithIncome_ReturnsIncomeForCategory"
+        };
+
+        _fixture.Context.Category.Add(category);
+        _fixture.Context.SaveChanges();
+
         // Arrange
         var income1 = new Income
         {
             Id = Guid.NewGuid(),
             AccountId = _fixture.TestAccountId,
-            CategoryId = _fixture.TestCategoryId,
+            CategoryId = category.Id,
             Amount = 1000m,
             Timestamp = DateTime.Now
         };
@@ -101,11 +109,11 @@ public class IncomeRepositoryTests
         await _repository.SaveChangesAsync();
 
         // Act
-        var result = (await _repository.GetByCategoryAsync(_fixture.TestCategoryId)).ToList();
+        var result = (await _repository.GetByCategoryAsync(category.Id)).ToList();
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(_fixture.TestCategoryId, result[0].CategoryId);
+        Assert.Equal(category.Id, result[0].CategoryId);
     }
 
     [Fact]
@@ -175,8 +183,8 @@ public class IncomeRepositoryTests
     public async Task GetByDateRangeAsync_IncomeOnBoundaries_ReturnsIncome()
     {
         // Arrange
-        var startDate = new DateTime(2025, 1, 1);
-        var endDate = new DateTime(2025, 1, 31);
+        var startDate = new DateTime(2025, 9, 1);
+        var endDate = new DateTime(2025, 9, 28);
         var income1 = new Income
         {
             Id = Guid.NewGuid(),
@@ -211,11 +219,18 @@ public class IncomeRepositoryTests
     [Fact]
     public async Task GetTotalByAccountAsync_WithIncome_ReturnsSumOfAmounts()
     {
+        var account = new Account
+        {
+            Name = "GetTotalByAccountAsync_WithIncome_ReturnsSumOfAmounts"
+        };
+        _fixture.Context.Account.Add(account);
+        _fixture.Context.SaveChanges();
+
         // Arrange
         var income1 = new Income
         {
             Id = Guid.NewGuid(),
-            AccountId = _fixture.TestAccountId,
+            AccountId = account.Id,
             CategoryId = _fixture.TestCategoryId,
             Amount = 1000m,
             Timestamp = DateTime.Now
@@ -223,7 +238,7 @@ public class IncomeRepositoryTests
         var income2 = new Income
         {
             Id = Guid.NewGuid(),
-            AccountId = _fixture.TestAccountId,
+            AccountId = account.Id,
             CategoryId = _fixture.TestCategoryId,
             Amount = 2500m,
             Timestamp = DateTime.Now
@@ -242,7 +257,7 @@ public class IncomeRepositoryTests
         await _repository.SaveChangesAsync();
 
         // Act
-        var total = await _repository.GetTotalByAccountAsync(_fixture.TestAccountId);
+        var total = await _repository.GetTotalByAccountAsync(account.Id);
 
         // Assert
         Assert.Equal(3500m, total);
@@ -265,12 +280,19 @@ public class IncomeRepositoryTests
     [Fact]
     public async Task GetTotalByCategoryAsync_WithIncome_ReturnsSumOfAmounts()
     {
+        var category = new Category
+        {
+            Name = "GetTotalByCategoryAsync_WithIncome_ReturnsSumOfAmounts"
+        };
+
+        _fixture.Context.Category.Add(category);
+        _fixture.Context.SaveChanges();
         // Arrange
         var income1 = new Income
         {
             Id = Guid.NewGuid(),
             AccountId = _fixture.TestAccountId,
-            CategoryId = _fixture.TestCategoryId,
+            CategoryId = category.Id,
             Amount = 1500m,
             Timestamp = DateTime.Now
         };
@@ -278,7 +300,7 @@ public class IncomeRepositoryTests
         {
             Id = Guid.NewGuid(),
             AccountId = _fixture.TestAccountId,
-            CategoryId = _fixture.TestCategoryId,
+            CategoryId = category.Id,
             Amount = 2500m,
             Timestamp = DateTime.Now
         };
@@ -296,7 +318,7 @@ public class IncomeRepositoryTests
         await _repository.SaveChangesAsync();
 
         // Act
-        var total = await _repository.GetTotalByCategoryAsync(_fixture.TestCategoryId);
+        var total = await _repository.GetTotalByCategoryAsync(category.Id);
 
         // Assert
         Assert.Equal(4000m, total);
@@ -320,15 +342,15 @@ public class IncomeRepositoryTests
     public async Task GetByAccountAndDateRangeAsync_WithMatchingIncome_ReturnsIncome()
     {
         // Arrange
-        var startDate = new DateTime(2025, 1, 1);
-        var endDate = new DateTime(2025, 1, 31);
+        var startDate = new DateTime(2025, 3, 1);
+        var endDate = new DateTime(2025, 3, 31);
         var income1 = new Income
         {
             Id = Guid.NewGuid(),
             AccountId = _fixture.TestAccountId,
             CategoryId = _fixture.TestCategoryId,
             Amount = 1000m,
-            Timestamp = new DateTime(2025, 1, 15)
+            Timestamp = new DateTime(2025, 3, 15)
         };
         var income2 = new Income
         {
@@ -336,7 +358,7 @@ public class IncomeRepositoryTests
             AccountId = _fixture.SecondAccountId,
             CategoryId = _fixture.TestCategoryId,
             Amount = 2000m,
-            Timestamp = new DateTime(2025, 1, 15) // Same date, different account
+            Timestamp = new DateTime(2025, 3, 15) // Same date, different account
         };
         var income3 = new Income
         {
@@ -344,7 +366,7 @@ public class IncomeRepositoryTests
             AccountId = _fixture.TestAccountId,
             CategoryId = _fixture.TestCategoryId,
             Amount = 3000m,
-            Timestamp = new DateTime(2025, 2, 1) // Same account, outside date range
+            Timestamp = new DateTime(2025, 6, 1) // Same account, outside date range
         };
         await _repository.InsertAsync(income1);
         await _repository.InsertAsync(income2);

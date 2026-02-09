@@ -176,8 +176,8 @@ public class AccountRepositoryTests
     public async Task SearchByNameAsync_PartialMatch_ReturnsMatchingAccounts()
     {
         // Arrange
-        var account1 = new Account { Id = Guid.NewGuid(), Name = "TestAccount1" };
-        var account2 = new Account { Id = Guid.NewGuid(), Name = "TestAccount2" };
+        var account1 = new Account { Id = Guid.NewGuid(), Name = "TestAccount1Search" };
+        var account2 = new Account { Id = Guid.NewGuid(), Name = "TestAccount2Search" };
         var account3 = new Account { Id = Guid.NewGuid(), Name = "OtherAccount" };
         await _repository.InsertAsync(account1);
         await _repository.InsertAsync(account2);
@@ -190,8 +190,8 @@ public class AccountRepositoryTests
         // Assert
         var testAccounts = result.Where(a => a.Name.Contains("TestAccount")).ToList();
         Assert.True(testAccounts.Count >= 2);
-        Assert.Contains(testAccounts, a => a.Name == "TestAccount1");
-        Assert.Contains(testAccounts, a => a.Name == "TestAccount2");
+        Assert.Contains(testAccounts, a => a.Name == "TestAccount1Search");
+        Assert.Contains(testAccounts, a => a.Name == "TestAccount2Search");
     }
 
     [Fact]

@@ -24,5 +24,4 @@
     <ProjectReference Include="..\..\src\ExpenseAnalyzer.Infra\ExpenseAnalyzer.Infra.csproj" />
     <ProjectReference Include="..\..\src\ExpenseAnalyzer.Api\ExpenseAnalyzer.Api.csproj" />
   </ItemGroup>
-
 </Project>
