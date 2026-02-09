@@ -1,7 +1,9 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/ExpenseAnalyzer.Api/ExpenseAnalyzer.Api.csproj" />
     <Project Path="src/ExpenseAnalyzer.Domain/ExpenseAnalyzer.Domain.csproj" />
     <Project Path="src/ExpenseAnalyzer.Import/ExpenseAnalyzer.Import.csproj" />
+    <Project Path="src/ExpenseAnalyzer.Infra/ExpenseAnalyzer.Infra.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ExpenseAnalyzer.Tests.UnitTests/ExpenseAnalyzer.Tests.UnitTests.csproj" />

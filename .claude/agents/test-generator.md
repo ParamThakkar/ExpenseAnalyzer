@@ -1,155 +1,112 @@
 # Test Generator Agent
 
-Generate comprehensive tests with 80%+ code coverage, maintainability, and reliability.
+Generate comprehensive tests: 80%+ coverage, fast, maintainable, reliable.
 
 ## Test Structure
 
 ```
 tests/
-├── ExpenseAnalyzer.Tests.UnitTests/
-│   ├── Domain/Services/ExpenseServiceTests.cs
-│   ├── Domain/Validators/CreateExpenseRequestValidatorTests.cs
-│   └── Fixtures/ExpenseTestFixture.cs
-└── ExpenseAnalyzer.Tests.IntegrationTests/
-    ├── Database/ExpenseRepositoryTests.cs
+├── UnitTests/
+│   ├── Endpoints/AccountEndpointsTests.cs
+│   ├── Repositories/AccountRepositoryTests.cs      # Complex repo methods only
+│   └── Fixtures/
+└── IntegrationTests/
+    ├── Repositories/RepositoryIntegrationTests.cs
+    ├── Endpoints/AccountEndpointsIntegrationTests.cs
     └── Fixtures/DatabaseFixture.cs
 ```
 
-**Naming**: `{ClassUnderTest}Tests.cs`, `{Purpose}Fixture.cs`
-
-## Test Naming: `MethodName_Scenario_ExpectedBehavior`
-
-```csharp
-[Fact]
-public async Task CreateExpenseAsync_WithValidData_ReturnsCreatedExpense() { }
-
-[Fact]
-public async Task CreateExpenseAsync_WithNegativeAmount_ThrowsValidationException() { }
-
-[Theory]
-[InlineData(0)]
-[InlineData(-1)]
-[InlineData(-100.50)]
-public async Task CreateExpenseAsync_WithInvalidAmount_ThrowsValidationException(decimal amount) { }
-```
+**Naming**: `{ClassUnderTest}Tests.cs`, Method: `MethodName_Scenario_ExpectedBehavior`
+**Traits**: `[Trait("Category", "Unit")]` or `[Trait("Category", "Integration")]`
 
 ## AAA Pattern (Arrange-Act-Assert)
 
+### Unit Test: Minimal API Endpoint
 ```csharp
-[Fact]
-public async Task CreateExpenseAsync_WithValidData_ReturnsCreatedExpense()
+[Trait("Category", "Unit")]
+public class AccountEndpointsTests
 {
-    // Arrange
-    var mockRepo = new Mock<IExpenseRepository>();
-    var mockValidator = new Mock<IValidator<CreateExpenseRequest>>();
-    var service = new ExpenseService(mockRepo.Object, mockValidator.Object);
-
-    var request = new CreateExpenseRequest
+    [Fact]
+    public async Task GetAllAsync_WithAccounts_ReturnsOkResult()
     {
-        Amount = 100.50m,
-        Date = DateTime.UtcNow,
-        CategoryId = Guid.NewGuid()
-    };
+        // Arrange
+        var mockRepo = new Mock<IAccountRepository>();
+        var accounts = new[] { new Account { Id = Guid.NewGuid(), Name = "Test" } };
+        mockRepo.Setup(r => r.GetAllAsync(default)).ReturnsAsync(accounts);
 
-    mockValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
-        .ReturnsAsync(new ValidationResult());
-    mockRepo.Setup(r => r.AddAsync(It.IsAny<Expense>(), It.IsAny<CancellationToken>()))
-        .ReturnsAsync(new Expense { Id = Guid.NewGuid(), Amount = request.Amount });
+        // Act
+        var result = await AccountEndpoints.GetAllAsync(mockRepo.Object, default);
 
-    // Act
-    var result = await service.CreateExpenseAsync(request, CancellationToken.None);
+        // Assert
+        var okResult = Assert.IsType<Ok<IReadOnlyList<Account>>>(result);
+        Assert.Single(okResult.Value);
+    }
 
-    // Assert
-    Assert.NotNull(result);
-    Assert.Equal(request.Amount, result.Amount);
-    mockRepo.Verify(r => r.AddAsync(It.IsAny<Expense>(), It.IsAny<CancellationToken>()), Times.Once);
+    [Fact]
+    public async Task GetByIdAsync_NotFound_ReturnsNotFound()
+    {
+        // Arrange
+        var mockRepo = new Mock<IAccountRepository>();
+        mockRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default)).ReturnsAsync((Account?)null);
+
+        // Act
+        var result = await AccountEndpoints.GetByIdAsync(Guid.NewGuid(), mockRepo.Object, default);
+
+        // Assert
+        Assert.IsType<NotFound>(result);
+    }
 }
 ```
 
-## Mocking with Moq
-
+### Parameterized Tests
 ```csharp
-// Setup return values
-mockRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-    .ReturnsAsync(new Expense { Id = Guid.NewGuid() });
-
-// Setup exceptions
-mockRepo.Setup(r => r.GetByIdAsync(Guid.Empty, It.IsAny<CancellationToken>()))
-    .ThrowsAsync(new EntityNotFoundException(nameof(Expense), Guid.Empty));
-
-// Verify calls
-mockRepo.Verify(r => r.UpdateAsync(It.IsAny<Expense>(), It.IsAny<CancellationToken>()), Times.Once);
-mockRepo.Verify(r => r.DeleteAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+[Theory]
+[InlineData(0), InlineData(-1), InlineData(-100.50)]
+public async Task CreateExpense_InvalidAmount_ReturnsBadRequest(decimal amount)
+{
+    var result = await ExpenseEndpoints.CreateAsync(
+        new CreateExpenseRequest { Amount = amount }, mockRepo.Object, default);
+    Assert.IsType<BadRequest<string>>(result);
+}
 ```
 
-## Test Data Builders
+## Mocking (Moq)
 
 ```csharp
+// Setup
+mockRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
+    .ReturnsAsync(new Expense { Id = Guid.NewGuid(), Amount = 100m });
+mockRepo.Setup(r => r.GetByIdAsync(Guid.Empty, default))
+    .ReturnsAsync((Expense?)null);
+
+// Verify
+mockRepo.Verify(r => r.InsertAsync(It.IsAny<Expense>(), default), Times.Once);
+mockRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
+
+// Test builder
 public class ExpenseBuilder
 {
-    private decimal _amount = 100.00m;
-    private DateTime _date = DateTime.UtcNow;
-    private Guid _categoryId = Guid.NewGuid();
-
-    public ExpenseBuilder WithAmount(decimal amount) { _amount = amount; return this; }
-    public ExpenseBuilder WithDate(DateTime date) { _date = date; return this; }
-    public ExpenseBuilder WithCategory(Guid id) { _categoryId = id; return this; }
-
-    public Expense Build() => new()
-    {
-        Id = Guid.NewGuid(),
-        Amount = _amount,
-        Date = _date,
-        CategoryId = _categoryId
-    };
-}
-
-// Usage
-var expense = new ExpenseBuilder().WithAmount(250.00m).Build();
-```
-
-## Parameterized Tests
-
-```csharp
-[Theory]
-[InlineData(0)]
-[InlineData(-1)]
-[InlineData(-999.99)]
-public async Task CreateExpense_WithNonPositiveAmount_ThrowsValidationException(decimal amount)
-{
-    var validator = new CreateExpenseRequestValidator();
-    var result = await validator.ValidateAsync(new CreateExpenseRequest { Amount = amount });
-
-    Assert.False(result.IsValid);
-    Assert.Contains(result.Errors, e => e.PropertyName == nameof(CreateExpenseRequest.Amount));
-}
-
-[Theory]
-[MemberData(nameof(GetInvalidDates))]
-public async Task CreateExpense_WithInvalidDate_Fails(DateTime date) { /* ... */ }
-
-public static IEnumerable<object[]> GetInvalidDates()
-{
-    yield return new object[] { DateTime.UtcNow.AddDays(1) };
-    yield return new object[] { DateTime.MaxValue };
+    private decimal _amount = 100m;
+    public ExpenseBuilder WithAmount(decimal amt) { _amount = amt; return this; }
+    public Expense Build() => new() { Id = Guid.NewGuid(), Amount = _amount };
 }
 ```
 
-## Fixtures for Shared Setup
+## Fixtures
 
 ```csharp
-// Class fixture (shared per test class)
-public class ExpenseServiceFixture : IDisposable
+// Class fixture for shared setup
+public class RepositoryFixture : IDisposable
 {
-    public Mock<IExpenseRepository> RepositoryMock { get; } = new();
-    public Mock<ILogger<ExpenseService>> LoggerMock { get; } = new();
+    public Mock<IRepository<Expense>> RepoMock { get; } = new();
     public void Dispose() { }
 }
 
-public class ExpenseServiceTests(ExpenseServiceFixture fixture) : IClassFixture<ExpenseServiceFixture>
+[Trait("Category", "Unit")]
+public class ExpenseEndpointsTests(RepositoryFixture fixture) : IClassFixture<RepositoryFixture>
 {
     [Fact]
-    public async Task TestMethod() { /* Use fixture.RepositoryMock */ }
+    public async Task GetAllAsync_ReturnsAccounts() { /* use fixture.RepoMock */ }
 }
 ```
 
@@ -160,18 +117,23 @@ public class ExpenseServiceTests(ExpenseServiceFixture fixture) : IClassFixture<
 public class DatabaseFixture : IAsyncLifetime
 {
     public ExpenseContext Context { get; private set; } = null!;
+    public Guid TestCategoryId { get; private set; }
 
     public async Task InitializeAsync()
     {
-        var dbName = $"ExpenseAnalyzer_Test_{Guid.NewGuid():N}";
-        var connString = $"Server=(localdb)\\mssqllocaldb;Database={dbName};Trusted_Connection=true;";
-
-        var options = new DbContextOptionsBuilder<ExpenseContext>()
-            .UseSqlServer(connString).Options;
-
-        Context = new ExpenseContext(options);
+        var dbName = $"ExpenseTest_{Guid.NewGuid():N}";
+        var conn = $"Server=(localdb)\\mssqllocaldb;Database={dbName};Trusted_Connection=true;";
+        var opts = new DbContextOptionsBuilder<ExpenseContext>()
+            .UseSqlServer(conn)
+            .UseLazyLoadingProxies()
+            .Options;
+        Context = new ExpenseContext(opts);
         await Context.Database.EnsureCreatedAsync();
-        await SeedDataAsync();
+
+        var category = new Category { Id = Guid.NewGuid(), Name = "Test" };
+        Context.Categories.Add(category);
+        await Context.SaveChangesAsync();
+        TestCategoryId = category.Id;
     }
 
     public async Task DisposeAsync()
@@ -179,156 +141,91 @@ public class DatabaseFixture : IAsyncLifetime
         await Context.Database.EnsureDeletedAsync();
         await Context.DisposeAsync();
     }
-
-    private async Task SeedDataAsync()
-    {
-        Context.Categories.Add(new Category { Id = Guid.NewGuid(), Name = "Test" });
-        await Context.SaveChangesAsync();
-    }
 }
 
 [CollectionDefinition("Database")]
 public class DatabaseCollection : ICollectionFixture<DatabaseFixture> { }
+```
 
+### Repository Integration Test
+```csharp
 [Collection("Database")]
-public class ExpenseRepositoryTests(DatabaseFixture fixture)
+[Trait("Category", "Integration")]
+public class AccountRepositoryTests(DatabaseFixture fixture)
 {
     [Fact]
-    public async Task AddAsync_ValidExpense_SavesSuccessfully()
+    public async Task GetByNameAsync_ExistingAccount_ReturnsAccount()
     {
-        var repo = new ExpenseRepository(fixture.Context);
-        var expense = new Expense
-        {
-            Id = Guid.NewGuid(),
-            Amount = 100m,
-            Date = DateTime.UtcNow,
-            CategoryId = fixture.Context.Categories.First().Id
-        };
+        // Arrange
+        var repo = new AccountRepository(fixture.Context);
+        var account = new Account { Id = Guid.NewGuid(), Name = "TestAccount" };
+        await repo.InsertAsync(account);
+        await repo.SaveChangesAsync();
 
-        var result = await repo.AddAsync(expense);
-        await fixture.Context.SaveChangesAsync();
+        // Act
+        var result = await repo.GetByNameAsync("TestAccount", default);
 
-        var saved = await fixture.Context.Expenses.FindAsync(result.Id);
-        Assert.NotNull(saved);
-        Assert.Equal(expense.Amount, saved.Amount);
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(account.Id, result.Id);
     }
 }
 ```
 
-### In-Memory Database (simpler alternative)
-```csharp
-public static ExpenseContext CreateInMemoryContext()
-{
-    var options = new DbContextOptionsBuilder<ExpenseContext>()
-        .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
-    var context = new ExpenseContext(options);
-    context.Database.EnsureCreated();
-    return context;
-}
-```
+## Code Coverage: 80% Target
 
-## Code Coverage: 80% Minimum
+**Priorities**: Endpoints 85%+, Specific repositories 80%+, Generic repository 70%+ (integration tests)
+**Test**: ✅ Happy paths, error cases, nulls, edge cases, HTTP status codes (Ok/NotFound/BadRequest)
+**Skip**: ❌ DTOs, Program.cs, migrations, auto-generated EF code
 
-### Coverage Targets
-- **Services/Validators**: 90%+ (critical business logic)
-- **Repositories**: 80%+ (data access)
-- **Entities**: 70%+ (domain behavior)
-
-### What to Test
-✅ Happy paths, validation failures, exceptions, null checks, edge cases, business rules
-✅ CRUD operations, query filters, null returns
-✅ Each validation rule, boundary conditions
-
-### What NOT to Test
-❌ POCOs/DTOs without logic, Program.cs/Startup, migrations, auto-generated code
-
-### Run Coverage
 ```bash
 dotnet test --collect:"XPlat Code Coverage"
-dotnet tool install -g dotnet-reportgenerator-globaltool
-reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:Html
-```
-
-### Configure in .csproj
-```xml
-<PropertyGroup>
-    <CollectCoverage>true</CollectCoverage>
-    <Threshold>80</Threshold>
-    <ThresholdType>line</ThresholdType>
-</PropertyGroup>
+reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage -reporttypes:Html
 ```
 
 ## Common Patterns
 
-### Testing Exceptions
+### Testing IResult Types
 ```csharp
-[Fact]
-public async Task Method_InvalidInput_ThrowsException()
-{
-    var exception = await Assert.ThrowsAsync<ValidationException>(
-        async () => await service.CreateAsync(invalidRequest));
-    Assert.Contains("Amount must be positive", exception.Message);
-}
+// Ok result
+var result = await AccountEndpoints.GetAllAsync(mockRepo.Object, default);
+var okResult = Assert.IsType<Ok<IReadOnlyList<Account>>>(result);
+Assert.NotEmpty(okResult.Value);
+
+// NotFound
+var result = await AccountEndpoints.GetByIdAsync(Guid.NewGuid(), mockRepo.Object, default);
+Assert.IsType<NotFound>(result);
+
+// BadRequest
+var result = await ExpenseEndpoints.CreateAsync(invalidRequest, mockRepo.Object, default);
+var badRequest = Assert.IsType<BadRequest<string>>(result);
+Assert.Contains("Amount", badRequest.Value);
+
+// Created
+var result = await ExpenseEndpoints.CreateAsync(validRequest, mockRepo.Object, default);
+var created = Assert.IsType<Created<Expense>>(result);
+Assert.Equal("/api/v1/expenses/...", created.Location);
 ```
 
-### Testing Logging
+### Testing Async Repository Methods
 ```csharp
-[Fact]
-public async Task Method_Error_LogsError()
-{
-    var mockLogger = new Mock<ILogger<ExpenseService>>();
-    var service = new ExpenseService(mockLogger.Object);
+mockRepo.Setup(r => r.GetAllAsync(default))
+    .ReturnsAsync(new[] { new Account { Id = Guid.NewGuid(), Name = "Test" } });
 
-    await Assert.ThrowsAsync<Exception>(() => service.FailingMethod());
+mockRepo.Setup(r => r.InsertAsync(It.IsAny<Expense>(), default))
+    .Returns(Task.CompletedTask);
 
-    mockLogger.Verify(x => x.Log(
-        LogLevel.Error,
-        It.IsAny<EventId>(),
-        It.Is<It.IsAnyType>((v, t) => true),
-        It.IsAny<Exception>(),
-        It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-        Times.Once);
-}
+mockRepo.Setup(r => r.SaveChangesAsync(default))
+    .ReturnsAsync(1);
 ```
 
-### Testing DateTime (use abstraction)
-```csharp
-public interface IDateTimeProvider { DateTime UtcNow { get; } }
-public class FakeDateTimeProvider : IDateTimeProvider
-{
-    public DateTime UtcNow { get; set; } = new(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
-}
-```
+## Checklist
+✅ Happy path + error scenarios, null/invalid inputs, all branches
+✅ IResult type assertions (Ok, NotFound, BadRequest, Created)
+✅ Mock verification (InsertAsync, SaveChangesAsync called)
+✅ AAA pattern, descriptive names (`MethodName_Scenario_ExpectedOutcome`)
+✅ Traits: `[Trait("Category", "Unit|Integration")]`
+✅ Fast: <100ms (unit), <5s (integration)
+✅ 80%+ coverage
 
-## Test Organization
-
-### Traits for Filtering
-```csharp
-[Trait("Category", "Unit")]
-[Fact]
-public async Task FastUnitTest() { }
-
-[Trait("Category", "Integration")]
-[Fact]
-public async Task DatabaseIntegrationTest() { }
-```
-
-Run: `dotnet test --filter "Category=Unit"`
-
-## Test Checklist
-- [ ] Happy path + error cases tested
-- [ ] Null/invalid inputs covered
-- [ ] All branches (if/else/switch) tested
-- [ ] Exceptions with proper assertions
-- [ ] Async/await throughout (never .Result/.Wait())
-- [ ] Mocks verified
-- [ ] AAA pattern followed
-- [ ] Descriptive names (`Method_Scenario_Expected`)
-- [ ] No test interdependencies
-- [ ] Fast (unit < 100ms, integration < 5s)
-- [ ] 80%+ code coverage achieved
-
-## Watch Mode
-```bash
-dotnet watch test --project tests/ExpenseAnalyzer.Tests.UnitTests
-```
+**Run**: `dotnet test --filter "Category=Unit"` | `dotnet watch test`
