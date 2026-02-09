@@ -15,6 +15,7 @@ public class ExpenseContext : DbContext
     public DbSet<Tag> Tag { get; set; }
     public DbSet<Expense> Expense { get; set; }
     public DbSet<ExpenseTag> ExpenseTag { get; set; }
+    public DbSet<Income> Income { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -59,5 +60,38 @@ public class ExpenseContext : DbContext
             .HasOne(et => et.Tag)
             .WithMany()
             .HasForeignKey(et => et.TagId);
+
+        // Income: Primary Key
+        modelBuilder.Entity<Income>()
+            .HasKey(x => x.Id);
+
+        // Income: Explicit decimal precision (standard currency format)
+        modelBuilder.Entity<Income>()
+            .Property(i => i.Amount)
+            .HasColumnType("decimal(18,2)");
+
+        // Income → Category: FK relationship with Restrict delete
+        modelBuilder.Entity<Income>()
+            .HasOne(i => i.Category)
+            .WithMany()
+            .HasForeignKey(i => i.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Income → Account: FK relationship with Restrict delete
+        modelBuilder.Entity<Income>()
+            .HasOne(i => i.Account)
+            .WithMany()
+            .HasForeignKey(i => i.AccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Income: Indexes for query performance
+        modelBuilder.Entity<Income>()
+            .HasIndex(i => i.Timestamp);
+
+        modelBuilder.Entity<Income>()
+            .HasIndex(i => i.AccountId);
+
+        modelBuilder.Entity<Income>()
+            .HasIndex(i => i.CategoryId);
     }
 }
