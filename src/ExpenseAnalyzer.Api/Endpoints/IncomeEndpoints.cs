@@ -56,31 +56,31 @@ public static class IncomeEndpoints
             .Produces(404);
     }
 
-    static async Task<IResult> GetAllAsync(IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> GetAllAsync(IIncomeRepository repo, CancellationToken ct)
     {
         var income = await repo.GetAllOrderedByDateAsync(ct);
         return Results.Ok(income);
     }
 
-    static async Task<IResult> GetByIdAsync(Guid id, IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> GetByIdAsync(Guid id, IIncomeRepository repo, CancellationToken ct)
     {
         var income = await repo.GetByIdAsync(id, ct);
         return income is null ? Results.NotFound() : Results.Ok(income);
     }
 
-    static async Task<IResult> GetByAccountAsync(Guid accountId, IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> GetByAccountAsync(Guid accountId, IIncomeRepository repo, CancellationToken ct)
     {
         var income = await repo.GetByAccountAsync(accountId, ct);
         return Results.Ok(income);
     }
 
-    static async Task<IResult> GetByCategoryAsync(Guid categoryId, IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> GetByCategoryAsync(Guid categoryId, IIncomeRepository repo, CancellationToken ct)
     {
         var income = await repo.GetByCategoryAsync(categoryId, ct);
         return Results.Ok(income);
     }
 
-    static async Task<IResult> GetByDateRangeAsync(DateTime startDate, DateTime endDate, IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> GetByDateRangeAsync(DateTime startDate, DateTime endDate, IIncomeRepository repo, CancellationToken ct)
     {
         if (startDate > endDate)
             return Results.BadRequest("Start date must be before end date");
@@ -89,13 +89,13 @@ public static class IncomeEndpoints
         return Results.Ok(income);
     }
 
-    static async Task<IResult> GetTotalByAccountAsync(Guid accountId, IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> GetTotalByAccountAsync(Guid accountId, IIncomeRepository repo, CancellationToken ct)
     {
         var total = await repo.GetTotalByAccountAsync(accountId, ct);
         return Results.Ok(total);
     }
 
-    static async Task<IResult> CreateAsync(Income income, IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> CreateAsync(Income income, IIncomeRepository repo, CancellationToken ct)
     {
         if (income.CategoryId == Guid.Empty)
             return Results.BadRequest("CategoryId is required");
@@ -111,7 +111,7 @@ public static class IncomeEndpoints
         return Results.Created($"/api/v1/income/{income.Id}", income);
     }
 
-    static async Task<IResult> UpdateAsync(Guid id, Income income, IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> UpdateAsync(Guid id, Income income, IIncomeRepository repo, CancellationToken ct)
     {
         var existing = await repo.GetByIdAsync(id, ct);
         if (existing is null)
@@ -136,7 +136,7 @@ public static class IncomeEndpoints
         return Results.NoContent();
     }
 
-    static async Task<IResult> DeleteAsync(Guid id, IIncomeRepository repo, CancellationToken ct)
+    public static async Task<IResult> DeleteAsync(Guid id, IIncomeRepository repo, CancellationToken ct)
     {
         var income = await repo.GetByIdAsync(id, ct);
         if (income is null)
