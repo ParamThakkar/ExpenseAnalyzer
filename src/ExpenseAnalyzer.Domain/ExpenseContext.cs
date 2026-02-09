@@ -45,8 +45,38 @@ public class ExpenseContext : DbContext
             .HasIndex(x => x.Name)
             .IsUnique();
 
+        // Expense: Primary Key
         modelBuilder.Entity<Expense>()
             .HasKey(x => x.Id);
+
+        // Expense: Explicit decimal precision (standard currency format)
+        modelBuilder.Entity<Expense>()
+            .Property(e => e.Amount)
+            .HasColumnType("decimal(18,2)");
+
+        // Expense → Category: FK relationship with Restrict delete
+        modelBuilder.Entity<Expense>()
+            .HasOne<Category>()
+            .WithMany()
+            .HasForeignKey(e => e.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Expense → Account: FK relationship with Restrict delete
+        modelBuilder.Entity<Expense>()
+            .HasOne<Account>()
+            .WithMany()
+            .HasForeignKey(e => e.AccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Expense: Indexes for query performance
+        modelBuilder.Entity<Expense>()
+            .HasIndex(e => e.Timestamp);
+
+        modelBuilder.Entity<Expense>()
+            .HasIndex(e => e.AccountId);
+
+        modelBuilder.Entity<Expense>()
+            .HasIndex(e => e.CategoryId);
 
         modelBuilder.Entity<ExpenseTag>()
             .HasKey(x => new { x.ExpenseId, x.TagId });
