@@ -16,6 +16,7 @@ public class ExpenseContext : DbContext
     public DbSet<Expense> Expense { get; set; }
     public DbSet<ExpenseTag> ExpenseTag { get; set; }
     public DbSet<Income> Income { get; set; }
+    public DbSet<Transfer> Transfer { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -123,5 +124,38 @@ public class ExpenseContext : DbContext
 
         modelBuilder.Entity<Income>()
             .HasIndex(i => i.CategoryId);
+
+        // Transfer: Primary Key
+        modelBuilder.Entity<Transfer>()
+            .HasKey(x => x.Id);
+
+        // Transfer: Explicit decimal precision (standard currency format)
+        modelBuilder.Entity<Transfer>()
+            .Property(t => t.Amount)
+            .HasColumnType("decimal(18,2)");
+
+        // Transfer → OutgoingAccount: FK relationship with Restrict delete
+        modelBuilder.Entity<Transfer>()
+            .HasOne(t => t.OutgoingAccount)
+            .WithMany()
+            .HasForeignKey(t => t.OutgoingAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Transfer → IncomingAccount: FK relationship with Restrict delete
+        modelBuilder.Entity<Transfer>()
+            .HasOne(t => t.IncomingAccount)
+            .WithMany()
+            .HasForeignKey(t => t.IncomingAccountId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Transfer: Indexes for query performance
+        modelBuilder.Entity<Transfer>()
+            .HasIndex(t => t.Timestamp);
+
+        modelBuilder.Entity<Transfer>()
+            .HasIndex(t => t.OutgoingAccountId);
+
+        modelBuilder.Entity<Transfer>()
+            .HasIndex(t => t.IncomingAccountId);
     }
 }
