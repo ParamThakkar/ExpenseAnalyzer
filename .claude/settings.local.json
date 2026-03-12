@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && mkdir -p src/ExpenseAnalyzer.Console/Models src/ExpenseAnalyzer.Console/Data src/ExpenseAnalyzer.Console/Ingestion src/ExpenseAnalyzer.Console/Nlu src/ExpenseAnalyzer.Console/Query && echo \"dirs created\")",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\\\\src\\\\ExpenseAnalyzer.Console\" && dotnet build 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && $env:OPENAI_API_KEY=\"test-key-smoke-test\" && dotnet run --project src/ExpenseAnalyzer.Console -- 2>&1 | head -20)",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && OPENAI_API_KEY=\"test-key-smoke-test\" dotnet run --project src/ExpenseAnalyzer.Console 2>&1 | head -25)",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && rm -f expenses.db && dotnet build src/ExpenseAnalyzer.Console 2>&1 | tail -3)",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && dotnet build src/ExpenseAnalyzer.Console 2>&1 | grep -i \"error\")",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && rm -f expenses.db && echo \"How much did I spend in total?\" | dotnet run --project src/ExpenseAnalyzer.Console 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && dotnet build src/ExpenseAnalyzer.Console 2>&1 | tail -3 && echo \"---\" && echo \"How much did I spend in total?\" | dotnet run --project src/ExpenseAnalyzer.Console 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && rm -f expenses.db && dotnet build src/ExpenseAnalyzer.Console 2>&1)",
+      "Bash(cd \"C:\\\\Users\\\\ParamThakkar\\\\source\\\\repos\\\\ExpenseAnalyzer\" && dotnet build src/ExpenseAnalyzer.Console 2>&1 | tail -3)"
+    ]
+  }
+}
